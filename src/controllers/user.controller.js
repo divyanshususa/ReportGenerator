@@ -12,7 +12,7 @@ export const register = asyncHandler(async (req, res, next) => {
     if ([name, email].some((field) => field?.trim() === "")) {
         return next(new apiError("all fields are required", 400))
     }
-
+    
     const existedUser = await User.findOne({ email });
 
     if (existedUser) {

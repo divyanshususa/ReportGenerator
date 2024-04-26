@@ -18,19 +18,9 @@ app.use(helmet());
 
 app.use(cookieParser());
 
-const allowedOrigins = ['http://localhost:5173', 'https://master--jocular-croquembouche-38a4a9.netlify.app'];
-
-// Enable CORS with specific origins
 app.use(cors({
-    origin: function (origin, callback) {
-        // Check if the origin is in the allowed origins list
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true // Enable sending cookies in cross-origin requests
+    origin: "http://localhost:5173",
+    credentials: true
 }));
 
 app.use(express.json({ limit: "16kb" }))
