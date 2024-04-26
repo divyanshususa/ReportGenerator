@@ -8,7 +8,7 @@ export const isAuthenticated = asyncHandler(async (req, res, next) => {
     console.log("cookies:", req.cookies)
     console.log("get token", token);
 
-    if (!token) return next(new apiError(401, "user not logged in"));
+    if (!token) return next(new apiError("user not logged in", 401));
 
     const decodedData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET); // to get user object
     console.log("decoded data :", decodedData._id)
@@ -23,7 +23,7 @@ export const isAuthenticated = asyncHandler(async (req, res, next) => {
 export const authorizedAdmin = (req, res, next) => {
     console.log("user", req.user)
     if (req.user.role !== "admin")
-        return next(new apiError(401, "user is not allowed to access this resource"));
+        return next(new apiError("user is not allowed to access this resource", 401));
     next();
 };
 
@@ -35,7 +35,7 @@ export const requireAccessLevel = (requiredAccessLevel) => asyncHandler(async (r
 
     // Check if the user exists and has the required access level
     if (!user || !user.accessLevel || user.accessLevel !== requiredAccessLevel) {
-        return next(new apiError(401, "you are not allowed to access this resource"));
+        return next(new apiError("you are not allowed to access this resource", 401));
         // return res.status(403).json({ success: false, message: 'Insufficient access level' });
     }
     next();
