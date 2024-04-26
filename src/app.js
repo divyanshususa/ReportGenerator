@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: ["http://localhost:5173","https://data-entry-cd2f7.web.app","https://master--jocular-croquembouche-38a4a9.netlify.app"],
+    origin: ["*"],
     credentials: true
 }));
 
