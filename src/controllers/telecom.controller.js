@@ -38,6 +38,7 @@ export const getAReport = asyncHandler(async (req, res, next) => {
 })
 
 
+
 export const telecomUpdate = asyncHandler(async (req, res, next) => {
     const { id, data } = req.body
     console.log(data)

@@ -42,7 +42,6 @@ const userSchema = new mongoose.Schema(
             enum: ["no", "yes"],
             default: "no"
         }
-
     },
     {
         timestamps: true

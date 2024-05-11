@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { denyAcsess, getALLReports, getAUser, getAllUsers, grantAcsess, login, register, resetPassword, setPasswordAndLevel } from "../controllers/user.controller.js";
+import { deleteUser, denyAcsess, getALLReports, getAUser, getAllUsers, getFilteredReport, grantAcsess, login, register, resetPassword, setPasswordAndLevel } from "../controllers/user.controller.js";
 import { authorizedAdmin, isAuthenticated } from "../middlewares/auth.middleware.js";
 
 const router = Router()
@@ -13,11 +13,15 @@ router.route("/set-password-level").post(isAuthenticated, authorizedAdmin, setPa
 
 router.route("/get-a-user/:id").get(isAuthenticated, authorizedAdmin, getAUser)
 
+router.route("/delete-a-user/:id").delete(isAuthenticated, authorizedAdmin, deleteUser)
+
 router.route("/get-users").get(isAuthenticated, authorizedAdmin, getAllUsers)
 
 
 
 router.route("/get-reports/:id").get(isAuthenticated, getALLReports)
+
+router.route("/get-filtered-reports/:id").post(isAuthenticated, getFilteredReport)
 
 router.route("/get-admin-reports/:id").get(isAuthenticated, authorizedAdmin, getALLReports)
 

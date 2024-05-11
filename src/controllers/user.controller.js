@@ -12,7 +12,7 @@ export const register = asyncHandler(async (req, res, next) => {
     if ([name, email].some((field) => field?.trim() === "")) {
         return next(new apiError("all fields are required", 400))
     }
-    
+
     const existedUser = await User.findOne({ email });
 
     if (existedUser) {
@@ -102,6 +102,15 @@ export const getAUser = asyncHandler(async (req, res, next) => {
     res.status(200).json(new apiResponse(user, "all users in database", true))
 
 });
+export const deleteUser = asyncHandler(async (req, res, next) => {
+
+    const { id } = req.params
+    console.log(id)
+    await User.findByIdAndDelete({ _id: id })
+
+    res.status(200).json(new apiResponse("", "user Deleted successfully", true))
+
+});
 
 
 export const getALLReports = asyncHandler(async (req, res, next) => {
@@ -117,6 +126,40 @@ export const getALLReports = asyncHandler(async (req, res, next) => {
     res.status(200).json(new apiResponse(user.report, "report associate with this user in database", true))
 
 });
+
+export const getFilteredReport = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { startDate, endDate } = req.body;
+
+    console.log("userid :", id);
+    console.log("startDate :", new Date(startDate));
+    console.log("endDate :", endDate);
+
+    let query = { user: id };
+    // If startDate and endDate are provided, add them to the query
+    if (startDate && endDate) {
+        query.createdAt = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+        };
+
+        console.log(query.createdAt)
+    }
+
+    console.log(query)
+
+    // match: { age: { $gte: 21 } },
+    let user = await User.findOne({ _id: id }).populate({
+        path: "report",
+        match: { createdAt: query.createdAt }
+    });
+
+    console.log("reports: ", user);
+
+    res.status(200).json(new apiResponse(user.report, "filtered Reports associated with this user in the database", true));
+
+});
+
 export const denyAcsess = asyncHandler(async (req, res, next) => {
 
     const { id } = req.body

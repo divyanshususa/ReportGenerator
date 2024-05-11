@@ -5,6 +5,7 @@ import { getAReport, medicalAdminUpdate, medicalInsertion, medicalUpdate } from 
 const router = Router()
 
 router.route("/medical-report").post(isAuthenticated, requireAccessLevel("medical"), medicalInsertion)
+
 router.route("/get-a-report/:id").get(isAuthenticated, requireAccessLevel("medical"), getAReport)
 
 router.route("/get-admin-report/:id").get(isAuthenticated, authorizedAdmin, getAReport)
