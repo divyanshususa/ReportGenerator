@@ -218,34 +218,40 @@ export const getFilteredReport = asyncHandler(async (req, res, next) => {
     const { report: reportData } = user;
     const workbook = new ExcelJs.Workbook();
     const worksheet = workbook.addWorksheet('Sheet 1');
+    if (reportData.length > 0) {
+        const data = reportData.map(item => {
+            const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
+            const values = Object.values(item);
+            values[values?.indexOf(item.product)] = productsString;
+            const [, , res] = values; // Adjust according to your schema
+            return res;
+        });
 
-    const data = reportData.map(item => {
-        const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
-        const values = Object.values(item);
-        values[values?.indexOf(item.product)] = productsString;
-        const [, , res] = values; // Adjust according to your schema
-        return res;
-    });
+        const valueToInserted = data.map(item => Object.values(item));
+        const headers = Object.keys(data[0]);
+        valueToInserted.unshift(headers);
 
-    const valueToInserted = data.map(item => Object.values(item));
-    const headers = Object.keys(data[0]);
-    valueToInserted.unshift(headers);
+        console.log("Value to be inserted:", valueToInserted);
 
-    console.log("Value to be inserted:", valueToInserted);
+        valueToInserted.forEach(row => {
+            worksheet.addRow(row);
+        });
 
-    valueToInserted.forEach(row => {
-        worksheet.addRow(row);
-    });
+        const filePath = path.join(__dirname, '..', 'excel-files', 'rangeReport.xlsx');
+        await workbook.xlsx.writeFile(filePath);
 
-    const filePath = path.join(__dirname, '..', 'excel-files', 'rangeReport.xlsx');
-    await workbook.xlsx.writeFile(filePath);
+        const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
+        await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
 
-    const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
-    await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
+        res.download(filePath, 'rangeReport.xlsx', () => {
+            fs.unlinkSync(filePath);
+        });
+    }
 
-    res.download(filePath, 'rangeReport.xlsx', () => {
-        fs.unlinkSync(filePath);
-    });
+    else {
+        res.status(200).json(new apiResponse("", "haven't generated reports till now", true))
+    }
+
 });
 
 
@@ -321,48 +327,53 @@ export const protectedExcel = asyncHandler(async (req, res, next) => {
     // const user = await User.findById({ _id: id }).populate({ path: "report" })
 
     const { report: reportData } = user;
-    console.log(reportData)
+    console.log(reportData.length)
 
     const workbook = new ExcelJs.Workbook();
     const worksheet = workbook.addWorksheet('Sheet 1');
 
-    const data = reportData.map(item => {
-        // Extract values from each object
-        const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
+    if (reportData.length > 0) {
+        const data = reportData?.map(item => {
+            // Extract values from each object
+            const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
 
-        const values = Object.values(item);
-        // Replace the 'product' property with the stringified products
-        values[values?.indexOf(item.product)] = productsString;
-        const [InternalCache, f, res] = values;
-        // console.log(res)
-        return res;
-    });
+            const values = Object?.values(item);
+            // Replace the 'product' property with the stringified products
+            values[values?.indexOf(item.product)] = productsString;
+            const [InternalCache, f, res] = values;
+            // console.log(res)
+            return res;
+        });
 
-    console.log("data", data)
+        console.log("data", data)
 
-    const valueToInserted = data.map(item => Object.values(item))
-    const headers = Object.keys(data[0]);
-    valueToInserted.unshift(headers);
-    console.log("valueToInserted", valueToInserted);
+        const valueToInserted = data.map(item => Object.values(item))
+        const headers = Object.keys(data[0]);
+        valueToInserted.unshift(headers);
+        console.log("valueToInserted", valueToInserted);
 
-    // console.log("data", data)
+        // console.log("data", data)
 
-    //file is created 
-    valueToInserted.forEach(row => {
-        worksheet.addRow(row)
-    });
+        //file is created 
+        valueToInserted.forEach(row => {
+            worksheet.addRow(row)
+        });
 
-    // console.log(worksheet)
-    // console.log(workbook)
-    const filePath = path.join(__dirname, '..', 'excel-files', 'protected.xlsx'); // Specify the directory where you want to save the file
-    await workbook.xlsx.writeFile(filePath);
+        // console.log(worksheet)
+        // console.log(workbook)
+        const filePath = path.join(__dirname, '..', 'excel-files', 'protected.xlsx'); // Specify the directory where you want to save the file
+        await workbook.xlsx.writeFile(filePath);
 
-    const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
-    // await workbook.xlsx.writeFile(filePath, { password: password });
-    await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
-    res.download(filePath, 'protected.xlsx', () => {
-        fs.unlinkSync(filePath); // Delete the file after sending it to the client
-    });
+        const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
+        // await workbook.xlsx.writeFile(filePath, { password: password });
+        await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
+        res.download(filePath, 'protected.xlsx', () => {
+            fs.unlinkSync(filePath); // Delete the file after sending it to the client
+        });
+    }
+    else {
+        res.status(200).json(new apiResponse("", "haven't generated any report today", true))
+    }
 
 })
 
