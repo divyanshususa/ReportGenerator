@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: ["http://localhost:5173", "https://data-entry-8fa59.web.app"],
+    origin: ["http://localhost:5173", "https://dapper-fairy-e8fc1b.netlify.app"],
     credentials: true
 }));
 
