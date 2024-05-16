@@ -5,17 +5,15 @@ import sendToken from "../utils/sendToken.js";
 import { generateStrongPassword } from "../utils/generatePassword.js";
 import apiError from "../utils/apiError.js";
 import ExcelJs from "exceljs"
-// import path from "path"
 import XlsxPopulate from "xlsx-populate";
 import fs from "fs"
 import path from 'path';
-import { fileURLToPath } from 'url';
+
 import Medical from "../models/medical.model.js";
 import Telecom from "../models/telecom.model.js";
 import ExcelPassword from "../models/excelPassword.model.js";
+import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const register = asyncHandler(async (req, res, next) => {
 
@@ -302,8 +300,11 @@ export const setExcelPassword = asyncHandler(async (req, res, next) => {
 
 export const protectedExcel = asyncHandler(async (req, res, next) => {
     const { id } = req.params
-    console.log("DIRNAME", __dirname)
-    const filePath = path.join(process.cwd(), 'excel-files', 'protected.xlsx');
+    const __filename = fileURLToPath(import.meta.url);
+    const dirname = path.dirname(__filename);
+    console.log(dirname)
+    const filePath = path.join(dirname, '..', 'excel-files', 'protected.xlsx');
+    console.log("File path:", filePath);
     console.log(filePath)
     const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
 
