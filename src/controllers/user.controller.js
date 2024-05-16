@@ -173,6 +173,7 @@ export const getFilteredReport = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { startDate, endDate } = req.body;
     const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
+    const filePath = path.join(process.cwd(), 'src', 'excel-files', 'protected.xlsx');
     // Log received parameters
     console.log("UserID:", id);
     console.log("StartDate:", startDate);
@@ -237,7 +238,7 @@ export const getFilteredReport = asyncHandler(async (req, res, next) => {
             worksheet.addRow(row);
         });
 
-        const filePath = path.join(__dirname, '..', 'excel-files', 'rangeReport.xlsx');
+        // const filePath = path.join(__dirname, '..', 'excel-files', 'rangeReport.xlsx');
         await workbook.xlsx.writeFile(filePath);
 
         const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
@@ -302,7 +303,7 @@ export const setExcelPassword = asyncHandler(async (req, res, next) => {
 export const protectedExcel = asyncHandler(async (req, res, next) => {
     const { id } = req.params
     console.log("DIRNAME", __dirname)
-
+    const filePath = path.join(process.cwd(), 'src', 'excel-files', 'protected.xlsx');
     const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
 
     // Get today's date
@@ -361,7 +362,7 @@ export const protectedExcel = asyncHandler(async (req, res, next) => {
 
         // console.log(worksheet)
         // console.log(workbook)
-        const filePath = path.join(__dirname, '..', 'excel-files', 'protected.xlsx'); // Specify the directory where you want to save the file
+        // const filePath = path.join(__dirname, '..', 'excel-files', 'protected.xlsx'); // Specify the directory where you want to save the file
         await workbook.xlsx.writeFile(filePath);
 
         const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
