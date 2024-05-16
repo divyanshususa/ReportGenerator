@@ -36,7 +36,7 @@ const medicalSchema = new Schema({
     "amount in words": { type: String, default: "" },
     "remark": {
         type: String,
-        enum: ["", "NA", "form details are not found", "field name is missing"],
+        enum: ["", "N.A.", "form details are not found", "field name is missing"],
 
     },
     "product": [productSchema]

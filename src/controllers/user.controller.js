@@ -4,6 +4,18 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import sendToken from "../utils/sendToken.js";
 import { generateStrongPassword } from "../utils/generatePassword.js";
 import apiError from "../utils/apiError.js";
+import ExcelJs from "exceljs"
+// import path from "path"
+import XlsxPopulate from "xlsx-populate";
+import fs from "fs"
+import path from 'path';
+import { fileURLToPath } from 'url';
+import Medical from "../models/medical.model.js";
+import Telecom from "../models/telecom.model.js";
+import ExcelPassword from "../models/excelPassword.model.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const register = asyncHandler(async (req, res, next) => {
 
@@ -113,6 +125,34 @@ export const deleteUser = asyncHandler(async (req, res, next) => {
 });
 
 
+export const deleteReport = asyncHandler(async (req, res, next) => {
+
+    const { id } = req.params
+
+    console.log("report id :", id)
+
+    let user = await User.findOne({ _id: req.user._id }).populate("report")
+    console.log(user.report)
+    const reports = user.report?.filter(report => report._id !== id);
+
+    if (user.accessLevel === "medical") {
+        const res = await Medical.deleteOne({ _id: id });
+        console.log(res)
+    }
+    else if (user.accessLevel === "telecom") {
+        const res = await Telecom.deleteOne({ _id: id });
+        console.log(res)
+    }
+
+    user.report = reports;
+
+    await user.save()
+
+    console.log("reports: ", user);
+
+    res.status(200).json(new apiResponse('', "report deleted successfully", true))
+
+});
 export const getALLReports = asyncHandler(async (req, res, next) => {
 
     const { id } = req.params
@@ -123,42 +163,208 @@ export const getALLReports = asyncHandler(async (req, res, next) => {
 
     console.log("reports: ", user);
 
-    res.status(200).json(new apiResponse(user.report, "report associate with this user in database", true))
+    res.status(200).json(new apiResponse(user.report, "report associate with this user ", true))
 
 });
 
 export const getFilteredReport = asyncHandler(async (req, res, next) => {
+
+
     const { id } = req.params;
     const { startDate, endDate } = req.body;
+    const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
+    // Log received parameters
+    console.log("UserID:", id);
+    console.log("StartDate:", startDate);
+    console.log("EndDate:", endDate);
 
-    console.log("userid :", id);
-    console.log("startDate :", new Date(startDate));
-    console.log("endDate :", endDate);
+    // Convert dates to Date objects
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
+    // Validate date conversion
+    // if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    //     return res.status(400).json({ message: "Invalid date format" });
+    // }
+
+    console.log("Converted StartDate:", start);
+    console.log("Converted EndDate:", end);
+    end.setDate(end.getDate() + 1);
+    console.log("after append", end);
+    // Build query object
     let query = { user: id };
-    // If startDate and endDate are provided, add them to the query
     if (startDate && endDate) {
         query.createdAt = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate)
+            $gte: start,
+            $lte: end
         };
-
-        console.log(query.createdAt)
     }
 
-    console.log(query)
+    console.log("Query:", query);
 
-    // match: { age: { $gte: 21 } },
+    // Fetch user and filter reports based on the createdAt field
     let user = await User.findOne({ _id: id }).populate({
         path: "report",
         match: { createdAt: query.createdAt }
     });
 
-    console.log("reports: ", user);
+    // Check if user is found
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
 
-    res.status(200).json(new apiResponse(user.report, "filtered Reports associated with this user in the database", true));
+    // console.log("Filtered Reports:", user.report);
 
+    const { report: reportData } = user;
+    const workbook = new ExcelJs.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet 1');
+
+    const data = reportData.map(item => {
+        const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
+        const values = Object.values(item);
+        values[values?.indexOf(item.product)] = productsString;
+        const [, , res] = values; // Adjust according to your schema
+        return res;
+    });
+
+    const valueToInserted = data.map(item => Object.values(item));
+    const headers = Object.keys(data[0]);
+    valueToInserted.unshift(headers);
+
+    console.log("Value to be inserted:", valueToInserted);
+
+    valueToInserted.forEach(row => {
+        worksheet.addRow(row);
+    });
+
+    const filePath = path.join(__dirname, '..', 'excel-files', 'rangeReport.xlsx');
+    await workbook.xlsx.writeFile(filePath);
+
+    const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
+    await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
+
+    res.download(filePath, 'rangeReport.xlsx', () => {
+        fs.unlinkSync(filePath);
+    });
 });
+
+
+// export const getTodaysReport = asyncHandler(async (req, res, next) => {
+//     const { id } = req.params;
+
+//     // Get today's date
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Set time to midnight for accurate comparison
+
+//     // Define the query to filter reports for today
+//     const query = {
+//         user: id,
+//         createdAt: {
+//             $gte: today,
+//             $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) // Next day
+//         }
+//     };
+
+//     // Find the user by ID and populate the reports for today
+//     const user = await User.findOne({ _id: id }).populate({
+//         path: 'report',
+//         match: { createdAt: query.createdAt }
+//     });
+
+//     if (!user) {
+//         return res.status(404).json(new apiResponse(null, 'User not found', false));
+//     }
+
+//     res.status(200).json(new apiResponse(user.report, 'Reports for today associated with this user in the database', true));
+
+// })
+
+
+//excel with password protection
+export const setExcelPassword = asyncHandler(async (req, res, next) => {
+    const { password } = req.body;
+
+    const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" });
+
+    filePassword.password = password;
+
+    await filePassword.save();
+
+    res.status(200).json(new apiResponse("", "password set for file", true))
+})
+
+export const protectedExcel = asyncHandler(async (req, res, next) => {
+    const { id } = req.params
+    console.log("DIRNAME", __dirname)
+
+    const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
+
+    // Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to midnight for accurate comparison
+
+    // Define the query to filter reports for today
+    const query = {
+        user: id,
+        createdAt: {
+            $gte: today,
+            $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) // Next day
+        }
+    };
+
+    // Find the user by ID and populate the reports for today
+    const user = await User.findOne({ _id: id }).populate({
+        path: 'report',
+        match: { createdAt: query.createdAt }
+    });
+
+    // const user = await User.findById({ _id: id }).populate({ path: "report" })
+
+    const { report: reportData } = user;
+    console.log(reportData)
+
+    const workbook = new ExcelJs.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet 1');
+
+    const data = reportData.map(item => {
+        // Extract values from each object
+        const productsString = item?.product?.map(product => `${product.productName}: ${product.rate} (${product.qty})`).join(', ');
+
+        const values = Object.values(item);
+        // Replace the 'product' property with the stringified products
+        values[values?.indexOf(item.product)] = productsString;
+        const [InternalCache, f, res] = values;
+        // console.log(res)
+        return res;
+    });
+
+    console.log("data", data)
+
+    const valueToInserted = data.map(item => Object.values(item))
+    const headers = Object.keys(data[0]);
+    valueToInserted.unshift(headers);
+    console.log("valueToInserted", valueToInserted);
+
+    // console.log("data", data)
+
+    //file is created 
+    valueToInserted.forEach(row => {
+        worksheet.addRow(row)
+    });
+
+    // console.log(worksheet)
+    // console.log(workbook)
+    const filePath = path.join(__dirname, '..', 'excel-files', 'protected.xlsx'); // Specify the directory where you want to save the file
+    await workbook.xlsx.writeFile(filePath);
+
+    const populatedWorkbook = await XlsxPopulate.fromFileAsync(filePath);
+    // await workbook.xlsx.writeFile(filePath, { password: password });
+    await populatedWorkbook.toFileAsync(filePath, { password: filePassword.password });
+    res.download(filePath, 'protected.xlsx', () => {
+        fs.unlinkSync(filePath); // Delete the file after sending it to the client
+    });
+
+})
 
 export const denyAcsess = asyncHandler(async (req, res, next) => {
 
