@@ -303,7 +303,8 @@ export const setExcelPassword = asyncHandler(async (req, res, next) => {
 export const protectedExcel = asyncHandler(async (req, res, next) => {
     const { id } = req.params
     console.log("DIRNAME", __dirname)
-    const filePath = path.join(process.cwd(), 'src', 'excel-files', 'protected.xlsx');
+    const filePath = path.join(process.cwd(), 'excel-files', 'protected.xlsx');
+    console.log(filePath)
     const filePassword = await ExcelPassword.findOne({ _id: "6645af8f5ea36215b743c22f" })
 
     // Get today's date
