@@ -18,8 +18,15 @@ app.use(helmet());
 
 app.use(cookieParser());
 
+// app.use(
+//   cors({
+//     origin: "*",
+//     credentials: true,
+//   })
+// );
+
 app.use(cors({
-    origin: ["http://localhost:5173", "https://dapper-fairy-e8fc1b.netlify.app"],
+    origin: ["https://6682d072fef90d3e4e5d718d--report-generator-007.netlify.app","http://localhost:5173", "https://dapper-fairy-e8fc1b.netlify.app"],
     credentials: true
 }));
 
